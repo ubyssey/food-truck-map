@@ -1,0 +1,108 @@
+<!-- Template from https://developers.google.com/maps/documentation/javascript/tutorial -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+      html, body { height: 100%; margin: 0; padding: 0; }
+      /* Let map take up whole window */
+			#map { height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script type="text/javascript">
+			var map;
+			function initMap() {
+				// To embed in general, create a div with ID and replace 'map' with ID
+				// and include the contents of this script tag as well as the maps script below
+  			map = new google.maps.Map(document.getElementById('map'), {
+   				center: {lat: 49.25987, lng: -123.2429},
+   			 	zoom: 14
+ 			 	});
+				var foodServicesSiteRoot = "http://www.food.ubc.ca/place/";
+				// Used for marker titles and info-window titles
+				var foodTruckNames = [
+					"Hungry Nomad",
+					"It's About Thai",
+					"Roaming Bowl",
+					"School Of Fish",
+					"The Dog House"
+				];
+				var foodTruckSlugs = [
+					"hungry-nomad",
+					"its-about-thai",
+					"roaming-bowl",
+					"school-of-fish",
+					"the-dog-house"
+				];
+				
+				// We want these to be available outside the for loop
+				var markers = [];
+				var infoWindows = [];
+				
+				for(var index = 0; index < foodTruckSlugs.length; index++) {
+					var http = new XMLHttpRequest();
+					/*
+						In practical applications we would set async=true instead
+						and add a callback that deals with the result once the request
+						is completed. Here I use async=false for simplicity.
+
+						Also would probably be a good idea to add a custom route to the
+						Ubyssey server that immediately serves the lat/lng data rather
+						have each client find it one their own, Ubyssey site would
+						update its data each 15mins (same interval as food trucks)
+						Currently loading the page takes ~10s because of:
+									1. lack of async
+									2. client-side regex matching for lat/lng/blurb for each food truck
+					*/
+					http.open("GET", foodServicesSiteRoot + foodTruckSlugs[index], false);
+					http.send();
+					var content = http.responseText;
+					// [1] indicates first capturing group
+					// Find latitude & longitude
+					var lat = content.match(/data-lat=\"(.*?)\"/)[1];
+					var lng = content.match(/data-lng=\"(.*?)\"/)[1];
+					// Pull blurb (first paragraph)
+					var blurb = content.match(/\<p\>(.*?)\<\/p\>/)[1];
+					// Create the marker and attach to the map
+				 	markers[index] = new google.maps.Marker({
+				    map: map,
+						position: new google.maps.LatLng(lat, lng),
+				 		title: foodTruckNames[index],
+						label: foodTruckNames[index],
+						index: index,
+						infoWindowVisible: false
+				 	});
+					// Title, blurb & link to appear in an info window
+					var infoWindowString = "<h2>" + foodTruckNames[index] + "</h2>" + "<p>" + blurb + "</p><p>" + "<a href=\"" + foodServicesSiteRoot + foodTruckSlugs[index] + "\">More information</a></p>";
+					// Create the info-window
+					infoWindows[index] = new google.maps.InfoWindow({
+					    content: infoWindowString
+					});
+					// Open the info-window when the particular marker is clicked
+					markers[index].addListener('click', function() {
+						// If the info-window isn't visible, display it on click
+						if(this.infoWindowVisible == false) {
+						  infoWindows[this.index].open(map, markers[this.index]);
+							this.infoWindowVisible = true;
+						}
+						// If the info-window is visible, hide it on click
+						else {
+							infoWindows[this.index].close();
+							this.infoWindowVisible = false;
+						}
+						// Close all other windows
+						for(var i = 0; i < foodTruckNames.length; i++) {
+							if(i != this.index) {
+								infoWindows[i].close();
+							}
+						}
+					});
+				}
+		 }
+    </script>
+		<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6qDsjeYmGJYS0fqLruWL71uarRcBjtCg&callback=initMap">
+    </script>
+  </body>
+</html>
+
