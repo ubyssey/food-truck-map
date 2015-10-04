@@ -1,0 +1,10 @@
+{ 
+	"name": "ubyssey-food-truck-map-server",
+	"version": "0.0.1",
+	"description": "server-side implementation for the ubyssey food truck map",
+	"engine": "node >= 0.12.2",
+	"dependencies": {
+		"express": "^4.12.3",
+		"request": "^2.61.0"
+	}
+}
